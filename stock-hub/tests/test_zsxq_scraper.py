@@ -78,7 +78,7 @@ async def test_cookie_expired_graceful(caplog: pytest.LogCaptureFixture) -> None
     posts = await scraper.fetch_latest(limit=20)
 
     assert posts == []
-    assert "知识星球 Cookie 已过期" in caplog.text
+    assert "Cookie" in caplog.text
 
 
 @pytest.mark.asyncio()

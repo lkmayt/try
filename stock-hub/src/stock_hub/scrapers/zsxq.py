@@ -33,7 +33,11 @@ class ZsxqScraper(BaseScraper):
         scraper_config = self._get_scraper_config()
         cookie = str(scraper_config.get("cookie", "")).strip()
         group_ids = scraper_config.get("group_ids", [])
-        if not cookie or not isinstance(group_ids, list):
+        if not cookie:
+            logger.info("Zsxq: no cookie configured, skipping")
+            return []
+        if not isinstance(group_ids, list) or len(group_ids) == 0:
+            logger.info("Zsxq: no group_ids configured, skipping")
             return []
 
         posts: list[Post] = []
@@ -46,6 +50,7 @@ class ZsxqScraper(BaseScraper):
             params = {"count": str(limit), "scope": "all"}
             signature, timestamp = self._generate_signature(path, params=params)
             url = f"https://api.zsxq.com{path}?{urlencode(params)}"
+            logger.info("Zsxq: fetching group %s", group_id_str)
             response = await self.http_client.get(
                 url,
                 headers={
@@ -58,17 +63,21 @@ class ZsxqScraper(BaseScraper):
             )
 
             if response.status_code == 401:
-                logger.warning("知识星球 Cookie 已过期")
+                logger.warning("Zsxq: Cookie 已过期 (401)")
                 return []
 
             payload = response.json()
             if not isinstance(payload, dict):
+                logger.warning("Zsxq: unexpected response format")
                 return []
             if not payload.get("succeeded", False):
-                logger.warning("知识星球 Cookie 已过期")
+                error_msg = payload.get("error", payload.get("msg", "unknown"))
+                logger.warning("Zsxq: API returned succeeded=false, error=%s", error_msg)
                 return []
 
-            posts.extend(self._parse_topics(payload, group_id=group_id_str))
+            parsed = self._parse_topics(payload, group_id=group_id_str)
+            logger.info("Zsxq: group %s returned %d topics", group_id_str, len(parsed))
+            posts.extend(parsed)
         return list(posts[:limit])
 
     @override
