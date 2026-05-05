@@ -174,21 +174,28 @@ async def stock_detail(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> StockDetailResponse:
     db = _get_db(request)
-    # Try exact stock_code match first
+    posts: list[Post] = []
+
+    # 1. Try exact stock_code match
     posts = db.get_posts_by_stock(stock_code=code, source=source, limit=limit)
-    # Fallback: search by title containing the code
+
+    # 2. Fallback: FTS search by code
     if not posts:
-        import re
-        if re.match(r"^\d{6}$", code):
-            posts = db.search_posts(query=code, source=source, limit=limit)
+        posts = db.search_posts(query=code, source=source, limit=limit)
+
+    # 3. Last resort: broad LIKE search by code
+    if not posts:
+        posts = db.search_by_like(keywords=[code], source=source, limit=limit)
+
     if not posts:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stock not found")
 
-    # Try to resolve stock name
     name = code
     try:
         from stock_hub.quotes.stock_info import get_stock_name
-        name = get_stock_name(code) or code
+        resolved = get_stock_name(code)
+        if resolved and resolved != code:
+            name = resolved
     except Exception:
         pass
 
@@ -232,6 +239,34 @@ async def delete_keyword(keyword_id: int, request: Request) -> Response:
 @router.get("/sources", response_model=dict[str, dict[str, dict[str, bool]]])
 async def sources() -> dict[str, dict[str, dict[str, bool]]]:
     return {"sources": _configured_sources()}
+
+
+@router.get("/suggest")
+async def suggest_stocks(q: str = "") -> dict[str, list[dict[str, str]]]:
+    """Proxy Eastmoney stock search — bypasses browser CORS."""
+    if not q or len(q.strip()) < 1:
+        return {"suggestions": []}
+    import httpx
+    url = (
+        "https://searchapi.eastmoney.com/api/Info/Search"
+        "?appid=el1902262&type=14"
+        "&and14=MultiMatch/Name,Code,PinYin/" + q.strip() + "/true"
+        "&returnfields14=Name,Code,PinYin"
+        "&pageIndex14=1&pageSize14=8"
+        "&isAssociation14=false"
+        "&token=CCSDCZSDCXYMYZYYSYYXSMDDSMDHHDJT"
+    )
+    async with httpx.AsyncClient(timeout=5) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+    items = data.get("Data", []) or []
+    return {
+        "suggestions": [
+            {"code": str(item.get("Code", "")), "name": str(item.get("Name", "")), "pinyin": str(item.get("PinYin", ""))}
+            for item in items if isinstance(item, dict)
+        ]
+    }
 
 
 @router.get("/hotrank/{source}")

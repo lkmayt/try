@@ -285,6 +285,26 @@ class Database:
 
         return results
 
+    def search_by_like(
+        self,
+        keywords: list[str],
+        source: str | None = None,
+        limit: int = 50,
+    ) -> list[Post]:
+        """Broad LIKE search across title+content for any of the given keywords."""
+        clauses = ["posts.title LIKE ?", "posts.content LIKE ?"]
+        params: list[object] = []
+        for kw in keywords:
+            params.extend([f"%{kw}%", f"%{kw}%"])
+        sql = "SELECT posts.* FROM posts WHERE (" + " OR ".join(clauses) + ")"
+        if source is not None:
+            sql += " AND posts.source = ?"
+            params.append(source)
+        sql += " ORDER BY posts.scraped_at DESC LIMIT ?"
+        params.append(limit)
+        rows = self.connection.execute(sql, params).fetchall()
+        return [self._deserialize_post(row) for row in rows]
+
     def search_posts_with_count(
         self,
         query: str,

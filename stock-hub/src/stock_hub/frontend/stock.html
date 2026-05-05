@@ -128,17 +128,22 @@
         });
       }
 
-      const hash = window.location.hash; // e.g., #/stock/600519
-      const code = hash.split('/stock/')[1] || '600519';
+      function extractCode(raw) {
+        try { raw = decodeURIComponent(raw); } catch(e) {}
+        var m = raw.match(/\d{6}/);
+        return m ? m[0] : '';
+      }
+      const hash = window.location.hash;
+      var code = extractCode(hash.split('/stock/')[1] || '600519') || '600519';
       if (codeInput) codeInput.value = code;
       
       initChart('chart-container');
       switchStock(code);
 
       window.addEventListener('hashchange', () => {
-        const newHash = window.location.hash;
+        var newHash = window.location.hash;
         if (newHash.startsWith('#/stock/')) {
-          const newCode = newHash.split('/stock/')[1];
+          var newCode = extractCode(newHash.split('/stock/')[1]);
           if (newCode && codeInput.value !== newCode) {
             codeInput.value = newCode;
             switchStock(newCode);

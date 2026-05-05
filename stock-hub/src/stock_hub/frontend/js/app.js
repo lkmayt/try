@@ -178,14 +178,19 @@ function initIndexPage() {
 function initStockPage() {
   const hash = window.location.hash;
   if (hash.startsWith('#/stock/')) {
-    const code = hash.replace('#/stock/', '');
+    var rawCode = hash.replace('#/stock/', '');
+    // Decode URL-encoded Chinese characters
+    try { rawCode = decodeURIComponent(rawCode); } catch(e) {}
+    // Extract 6-digit stock code from any input
+    var codeMatch = rawCode.match(/\d{6}/);
+    var code = codeMatch ? codeMatch[0] : rawCode.substring(0, 6);
+    
     const stockCodeInput = $('#stock-code-input');
     if (stockCodeInput) {
       stockCodeInput.value = code;
     }
     
-    // Update placeholders
     const nameEl = $('#stock-name');
-    if (nameEl) nameEl.textContent = `${code} (加载中...)`;
+    if (nameEl) nameEl.textContent = code + ' (加载中...)';
   }
 }
