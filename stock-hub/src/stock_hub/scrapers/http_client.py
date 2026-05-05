@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class HttpClient:
     """Thin async httpx client wrapper with retry support."""
 
-    def __init__(self, timeout: float = 15.0, max_retries: int = 3) -> None:
+    def __init__(self, timeout: float = 15.0, max_retries: int = 5) -> None:
         self.timeout: float = timeout
         self.max_retries: int = max_retries
         self._client: httpx.AsyncClient | None = None

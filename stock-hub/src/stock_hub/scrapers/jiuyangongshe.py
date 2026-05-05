@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import time
 from datetime import datetime, timezone
 from typing import cast, override
@@ -9,6 +10,8 @@ from stock_hub.config import get_config
 from stock_hub.scrapers.base import BaseScraper
 from stock_hub.scrapers.http_client import HttpClient
 from stock_hub.storage.models import Post
+
+logger = logging.getLogger(__name__)
 
 
 class JiuyangongsheScraper(BaseScraper):
@@ -51,7 +54,9 @@ class JiuyangongsheScraper(BaseScraper):
                 "Referer": "https://www.jiuyangongshe.com/",
             },
         )
-        _ = response.raise_for_status()
+        if response.status_code >= 400:
+            logger.warning("Jiuyangongshe returned %d, returning empty", response.status_code)
+            return []
         return cast(list[object], self._parse_posts(cast(dict[str, object], response.json())))
 
     @override
@@ -60,9 +65,14 @@ class JiuyangongsheScraper(BaseScraper):
         response = await self.client.post(
             self.SEARCH_URL,
             json=payload,
-            headers=self._generate_auth_headers(),
+            headers={
+                **self._generate_auth_headers(),
+                "Referer": "https://www.jiuyangongshe.com/",
+            },
         )
-        _ = response.raise_for_status()
+        if response.status_code >= 400:
+            logger.warning("Jiuyangongshe search returned %d", response.status_code)
+            return []
         return cast(list[object], self._parse_posts(cast(dict[str, object], response.json())))
 
     def _parse_posts(self, payload: dict[str, object]) -> list[Post]:
