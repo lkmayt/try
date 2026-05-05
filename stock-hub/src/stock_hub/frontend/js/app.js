@@ -104,13 +104,16 @@ function navigateTo(hash) {
 function handleRoute() {
   const hash = window.location.hash;
   if (hash.startsWith('#/stock/')) {
-    const code = hash.replace('#/stock/', '');
-    if (!window.location.pathname.includes('stock.html')) {
-      window.location.href = `stock.html#/stock/${code}`;
+    var rawCode = hash.replace('#/stock/', '');
+    try { rawCode = decodeURIComponent(rawCode); } catch(e) {}
+    var codeMatch = rawCode.match(/\d{6}/);
+    var code = codeMatch ? codeMatch[0] : '';
+    if (!window.location.pathname.endsWith('stock.html')) {
+      window.location.href = '/stock.html#/stock/' + (code || rawCode);
     }
   } else if (hash === '#/' || hash === '') {
-    if (!window.location.pathname.includes('index.html') && window.location.pathname !== '/') {
-      window.location.href = 'index.html';
+    if (window.location.pathname.endsWith('stock.html')) {
+      window.location.href = '/';
     }
   }
 }
@@ -132,30 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle routing
   window.addEventListener('hashchange', handleRoute);
   
-  // Global search input handler
+  // Global search handled by suggest.js (autocomplete + Enter + click)
   const searchInput = $('#global-search');
-  const searchBtn = $('#global-search-btn');
-  
   if (searchInput) {
-    searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && searchInput.value.trim()) {
-        const val = searchInput.value.trim();
-        const codeMatch = val.match(/\d{6}/);
-        if (codeMatch) navigateTo(`#/stock/${codeMatch[0]}`);
-      }
-    });
+    // Navigate to stock page when hash changes (handled by handleRoute)
   }
   
-  if (searchBtn && searchInput) {
-    searchBtn.addEventListener('click', () => {
-      const val = searchInput.value.trim();
-      if (val) {
-        const codeMatch = val.match(/\d{6}/);
-        if (codeMatch) navigateTo(`#/stock/${codeMatch[0]}`);
-      }
-    });
-  }
-
   // Page specific initialization
   if (window.location.pathname.includes('stock.html')) {
     initStockPage();
