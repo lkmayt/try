@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Detail - Stock Hub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <div class="logo">Stock Hub</div>
+      <a href="index.html#/" style="color: var(--text-primary); font-size: 14px;">返回首页</a>
+    </div>
+    <div class="navbar-right">
+      <div class="search-container">
+        <input type="text" id="global-search" class="search-input" placeholder="输入股票代码 (如 600519)">
+        <button id="global-search-btn" class="btn" style="margin-left: 5px;">搜索</button>
+      </div>
+      <div id="current-time" class="clock">0000-00-00 00:00:00</div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="stock-header">
+      <div class="search-container">
+        <input type="text" id="stock-code-input" class="search-input" placeholder="股票代码">
+        <button id="view-stock-btn" class="btn" style="margin-left: 10px;">查看</button>
+      </div>
+    </div>
+
+    <!-- Stock Info Panel -->
+    <div class="stock-info-panel">
+      <div class="info-item">
+        <span class="info-label">股票名称</span>
+        <span id="stock-name" class="info-value">---</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">最新价</span>
+        <span id="stock-price" class="info-value up">0.00</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">涨跌幅</span>
+        <span id="stock-change" class="info-value up">+0.00%</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">成交量</span>
+        <span id="stock-volume" class="info-value">0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">成交额</span>
+        <span id="stock-amount" class="info-value">0</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">最高</span>
+        <span id="stock-high" class="info-value">0.00</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">最低</span>
+        <span id="stock-low" class="info-value">0.00</span>
+      </div>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-wrapper">
+      <div id="chart-container" style="width:100%;height:400px"></div>
+    </div>
+
+    <!-- Related Posts -->
+    <div class="related-posts">
+      <h3>相关资讯</h3>
+      <div class="table-container">
+        <table id="related-posts-table">
+          <thead>
+            <tr>
+              <th class="col-time">时间</th>
+              <th class="col-source">来源</th>
+              <th class="col-title">标题</th>
+            </tr>
+          </thead>
+          <tbody id="related-posts-tbody">
+            <!-- Placeholder rows -->
+            <tr>
+              <td class="col-time">2023-10-25 14:30:00</td>
+              <td class="col-source"><span class="source-tag source-cninfo">巨潮</span></td>
+              <td class="col-title">关于公司重大资产重组的进展公告</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Status Bar -->
+  <footer class="status-bar">
+    <div class="status-indicators">
+      <div class="status-item">
+        <div class="status-dot green"></div>
+        <span>行情连接正常</span>
+      </div>
+    </div>
+    <div class="attribution">
+      <a href="https://cn.tradingview.com/" target="_blank" rel="noopener noreferrer">Powered by TradingView</a>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const viewBtn = document.getElementById('view-stock-btn');
+      const codeInput = document.getElementById('stock-code-input');
+      
+      if (viewBtn && codeInput) {
+        viewBtn.addEventListener('click', () => {
+          if (codeInput.value.trim()) {
+            switchStock(codeInput.value.trim());
+          }
+        });
+        
+        codeInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && codeInput.value.trim()) {
+            switchStock(codeInput.value.trim());
+          }
+        });
+      }
+
+      const hash = window.location.hash; // e.g., #/stock/600519
+      const code = hash.split('/stock/')[1] || '600519';
+      if (codeInput) codeInput.value = code;
+      
+      initChart('chart-container');
+      switchStock(code);
+
+      window.addEventListener('hashchange', () => {
+        const newHash = window.location.hash;
+        if (newHash.startsWith('#/stock/')) {
+          const newCode = newHash.split('/stock/')[1];
+          if (newCode && codeInput.value !== newCode) {
+            codeInput.value = newCode;
+            switchStock(newCode);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Hub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <div class="logo">Stock Hub</div>
+      <a href="#/" style="color: var(--text-primary); font-size: 14px;">首页</a>
+      <a href="hotrank.html" style="color: var(--text-secondary); font-size: 14px; margin-left: 16px;">人气榜</a>
+    </div>
+    <div class="navbar-right">
+      <div class="search-container">
+        <input type="text" id="global-search" class="search-input" placeholder="搜股票: 代码/名称/拼音 (如 600519/茅台/mt)">
+        <button id="global-search-btn" class="btn" style="margin-left: 5px;">搜索</button>
+      </div>
+      <div id="current-time" class="clock">0000-00-00 00:00:00</div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Controls Row -->
+    <div class="controls-row">
+      <button id="scheduler-toggle" class="btn btn-toggle">开始</button>
+      
+      <div class="search-container" style="margin-left: 10px; margin-right: 10px;">
+        <input type="text" id="content-search" class="search-input" placeholder="搜索内容...">
+        <span class="auto-refresh-indicator" id="refresh-indicator" title="每30秒自动刷新">⟳ 自动刷新中</span>
+      </div>
+
+      <div class="keyword-input-group">
+        <input type="text" id="keyword-input" class="keyword-input" placeholder="添加监控关键词">
+        <button id="keyword-add-btn" class="btn">添加</button>
+      </div>
+      
+      <div id="keyword-tags" class="keywords-list">
+        <!-- Placeholder keywords -->
+        <div class="keyword-tag">
+          <span>重组</span>
+          <span class="remove">×</span>
+        </div>
+        <div class="keyword-tag">
+          <span>算力</span>
+          <span class="remove">×</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div id="tabs" class="tab-bar">
+      <div class="tab active" data-source="all">全部</div>
+      <div class="tab" data-source="cninfo">巨潮</div>
+      <div class="tab" data-source="sse">上证互动</div>
+      <div class="tab" data-source="szse">深证互动</div>
+      <div class="tab" data-source="jiuyan">韭研公社</div>
+      <div class="tab" data-source="zsxq">知识星球</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <table id="posts-table">
+        <thead>
+          <tr>
+            <th class="col-time">时间</th>
+            <th class="col-source">来源</th>
+            <th class="col-title">标题</th>
+            <th class="col-keywords">关键词命中</th>
+          </tr>
+        </thead>
+        <tbody id="posts-tbody">
+          <tr id="posts-empty"><td colspan="4" style="text-align:center;padding:40px;color:var(--text-secondary)">正在加载数据...</td></tr>
+        </tbody>
+        </tbody>
+      </table>
+      <div style="text-align: center; margin: 20px 0;">
+        <button id="load-more-btn" class="btn" style="display: none;">加载更多</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Status Bar -->
+  <footer class="status-bar">
+    <div class="status-indicators">
+      <!-- Indicators will be populated by status.js -->
+    </div>
+    <div class="attribution">
+      <a href="https://cn.tradingview.com/" target="_blank" rel="noopener noreferrer">Powered by TradingView</a>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/suggest.js"></script>
+  <script src="js/posts.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/keywords.js"></script>
+  <script src="js/status.js"></script>
+</body>
+</html>

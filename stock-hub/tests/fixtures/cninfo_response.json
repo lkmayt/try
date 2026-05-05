@@ -1,0 +1,22 @@
+{
+  "announcements": [
+    {
+      "announcementTitle": "贵州茅台(600519): 2024年年度报告",
+      "announcementContent": "贵州茅台酒股份有限公司2024年年度报告...",
+      "adjunctUrl": "finalpage/2024-03-28/1234567890.PDF",
+      "announcementTime": "2024-03-28 00:00:00",
+      "secCode": "600519",
+      "secName": "贵州茅台"
+    },
+    {
+      "announcementTitle": "中芯国际(688981): 关于半导体行业发展公告",
+      "announcementContent": "中芯国际集成电路制造有限公司...",
+      "adjunctUrl": "finalpage/2024-03-27/9876543210.PDF",
+      "announcementTime": "2024-03-27 00:00:00",
+      "secCode": "688981",
+      "secName": "中芯国际"
+    }
+  ],
+  "totalRecordNum": 2,
+  "hasMore": false
+}
