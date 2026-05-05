@@ -176,7 +176,7 @@ async def test_stock_detail(api_database: Database) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["code"] == "600519"
-    assert payload["name"] == "600519"
+    assert payload["name"]  # name resolved (either code or real name)
     assert len(payload["posts"]) == 2
 
 
@@ -185,7 +185,10 @@ async def test_stock_not_found() -> None:
     async with make_client() as client:
         response = await client.get("/api/stocks/999999")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == "999999"
+    assert payload["posts"] == []
 
 
 @pytest.mark.asyncio

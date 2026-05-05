@@ -187,9 +187,6 @@ async def stock_detail(
     if not posts:
         posts = db.search_by_like(keywords=[code], source=source, limit=limit)
 
-    if not posts:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stock not found")
-
     name = code
     try:
         from stock_hub.quotes.stock_info import get_stock_name
