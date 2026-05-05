@@ -1,101 +1,94 @@
-// Smart stock search autocomplete using Sina suggest API (JSONP to avoid CORS)
-let suggestTimer = null;
-let suggestDropdown = null;
-let suggestCallbackId = 0;
+// Stock search autocomplete via Eastmoney API (JSON, native Name+Code+Pinyin matching)
+var _suggestTimer = null;
+var _suggestDropdown = null;
 
 function initSmartSearch() {
-  const input = document.getElementById('global-search');
+  var input = document.getElementById('global-search');
   if (!input) return;
 
-  suggestDropdown = document.createElement('div');
-  suggestDropdown.className = 'suggest-dropdown';
-  suggestDropdown.style.display = 'none';
-  input.parentElement.appendChild(suggestDropdown);
+  _suggestDropdown = document.createElement('div');
+  _suggestDropdown.className = 'suggest-dropdown';
+  _suggestDropdown.style.display = 'none';
+  input.parentElement.appendChild(_suggestDropdown);
 
-  input.addEventListener('input', () => {
-    clearTimeout(suggestTimer);
-    const q = input.value.trim();
-    if (q.length < 1) { suggestDropdown.style.display = 'none'; return; }
-    suggestTimer = setTimeout(() => fetchSuggestions(q), 250);
+  input.addEventListener('input', function() {
+    clearTimeout(_suggestTimer);
+    var q = input.value.trim();
+    if (q.length < 1) { _suggestDropdown.style.display = 'none'; return; }
+    _suggestTimer = setTimeout(function() { fetchSuggestions(q); }, 200);
   });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') suggestDropdown.style.display = 'none';
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') _suggestDropdown.style.display = 'none';
+  });
+
+  input.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-      suggestDropdown.style.display = 'none';
-      const q = input.value.trim();
-      if (q) goToStock(q);
+      var firstItem = _suggestDropdown.querySelector('.suggest-item');
+      if (firstItem && _suggestDropdown.style.display !== 'none') {
+        // Pick first suggestion on Enter
+        firstItem.click();
+        e.preventDefault();
+      } else {
+        _suggestDropdown.style.display = 'none';
+        goToStock(input.value.trim());
+      }
     }
   });
 
-  document.getElementById('global-search-btn').addEventListener('click', () => {
-    const q = input.value.trim();
-    if (q) goToStock(q);
-  });
+  var btn = document.getElementById('global-search-btn');
+  if (btn) {
+    btn.addEventListener('click', function() { goToStock(input.value.trim()); });
+  }
 
-  document.addEventListener('click', (e) => {
-    if (!input.contains(e.target) && !suggestDropdown.contains(e.target)) {
-      suggestDropdown.style.display = 'none';
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !_suggestDropdown.contains(e.target)) {
+      _suggestDropdown.style.display = 'none';
     }
   });
 }
 
 function fetchSuggestions(keyword) {
-  const cbName = '__sina_suggest_cb_' + (++suggestCallbackId);
-  window[cbName] = function(data) {
-    delete window[cbName];
-    showSuggestions(data);
-  };
+  var url = 'https://searchapi.eastmoney.com/api/Info/Search' +
+    '?appid=el1902262&type=14' +
+    '&and14=MultiMatch/Name,Code,PinYin/' + encodeURIComponent(keyword) + '/true' +
+    '&returnfields14=Name,Code,PinYin' +
+    '&pageIndex14=1&pageSize14=8&isAssociation14=false';
+  // Eastmoney uses a token in the URL for anti-abuse
+  url += '&token=CCSDCZSDCXYMYZYYSYYXSMDDSMDHHDJT';
 
-  const script = document.createElement('script');
-  script.src = 'https://suggest3.sinajs.cn/suggest/?name=suggestion&type=111&key=' + encodeURIComponent(keyword);
-  script.onerror = function() {
-    script.remove();
-    delete window[cbName];
-    suggestDropdown.style.display = 'none';
-  };
-  script.onload = function() {
-    // Sina API sets global `suggestion` var when loaded as script (JSONP pattern)
-    var data = window.suggestion;
-    if (data) { showSuggestions(data); delete window.suggestion; }
-    script.remove();
-  };
-  document.head.appendChild(script);
-  setTimeout(function() { script.remove(); }, 5000);
+  fetch(url, { signal: AbortSignal.timeout(5000) })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function(data) {
+      var items = data && data.Data ? data.Data : [];
+      if (items.length === 0) { _suggestDropdown.style.display = 'none'; return; }
+      renderDropdown(items);
+    })
+    .catch(function() { _suggestDropdown.style.display = 'none'; });
 }
 
-function showSuggestions(raw) {
-  if (!raw) { suggestDropdown.style.display = 'none'; return; }
-
-  var items = String(raw).split(';').filter(Boolean);
-  if (items.length === 0) { suggestDropdown.style.display = 'none'; return; }
-
-  suggestDropdown.innerHTML = items.map(function(item) {
-    var parts = item.split(',');
-    // Format: name,111,market_code,code,name,,abbr,...
-    if (parts.length < 4) return '';
-    var name = parts[0];
-    var code = parts[3] || parts[2];
-    var abbr = parts[6] ? parts[6].toUpperCase() : '';
-    // Strip exchange prefix for display
-    var displayCode = code.replace(/^(sh|sz|bj)/i, '');
-    return '<div class="suggest-item" data-code="' + displayCode + '" data-name="' + name + '">'
-      + '<span class="suggest-name">' + name + '</span>'
-      + '<span class="suggest-code">' + displayCode + '</span>'
-      + (abbr ? '<span class="suggest-abbr">' + abbr + '</span>' : '')
-      + '</div>';
+function renderDropdown(items) {
+  _suggestDropdown.innerHTML = items.slice(0, 8).map(function(item) {
+    var code = item.Code || '';
+    var name = item.Name || '';
+    var pinyin = (item.PinYin || '').toUpperCase();
+    return '<div class="suggest-item" data-code="' + code + '">' +
+      '<span class="suggest-name">' + name + '</span>' +
+      '<span class="suggest-code">' + code + '</span>' +
+      (pinyin ? '<span class="suggest-abbr">' + pinyin + '</span>' : '') +
+      '</div>';
   }).join('');
 
-  suggestDropdown.querySelectorAll('.suggest-item').forEach(function(item) {
+  _suggestDropdown.querySelectorAll('.suggest-item').forEach(function(item) {
     item.addEventListener('click', function() {
       var code = item.dataset.code;
-      document.getElementById('global-search').value = code + ' ' + item.dataset.name;
-      suggestDropdown.style.display = 'none';
+      document.getElementById('global-search').value = code;
+      _suggestDropdown.style.display = 'none';
       window.location.hash = '#/stock/' + code;
     });
   });
 
-  suggestDropdown.style.display = 'block';
+  _suggestDropdown.style.display = 'block';
 }
 
 function goToStock(query) {
