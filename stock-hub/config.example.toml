@@ -7,7 +7,7 @@ db_path = "stock_hub.db"
 retention_days = 90
 
 [scrapers]
-default_interval = 60  # seconds
+default_interval = 120  # seconds
 
 [scrapers.cninfo]
 enabled = true
@@ -15,15 +15,15 @@ interval = 120
 
 [scrapers.sse]
 enabled = true
-interval = 60
+interval = 120
 
 [scrapers.szse]
 enabled = true
-interval = 60
+interval = 120
 
 [scrapers.jiuyan]
 enabled = true
-interval = 60
+interval = 120
 salt = "Uu0KfOB8iUP69d3c"
 
 [scrapers.zsxq]
