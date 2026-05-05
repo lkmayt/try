@@ -6,3 +6,6 @@ dist/
 build/
 config.toml
 *.db
+*.db-shm
+*.db-wal
+data/last_sync.json
