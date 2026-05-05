@@ -32,13 +32,19 @@ class ZsxqScraper(BaseScraper):
     async def fetch_latest(self, limit: int = 20) -> list[object]:
         scraper_config = self._get_scraper_config()
         cookie = str(scraper_config.get("cookie", "")).strip()
-        group_ids = scraper_config.get("group_ids", [])
         if not cookie:
             logger.info("Zsxq: no cookie configured, skipping")
             return []
+
+        group_ids = scraper_config.get("group_ids", [])
         if not isinstance(group_ids, list) or len(group_ids) == 0:
-            logger.info("Zsxq: no group_ids configured, skipping")
-            return []
+            # Auto-discover joined groups
+            logger.info("Zsxq: no group_ids configured, auto-discovering...")
+            groups = await self._fetch_joined_groups(cookie)
+            if not groups:
+                logger.warning("Zsxq: could not discover any groups")
+                return []
+            group_ids = groups
 
         posts: list[Post] = []
         for group_id in group_ids:
@@ -90,6 +96,32 @@ class ZsxqScraper(BaseScraper):
             return {}
         scraper_config = scrapers.get(self.source_name, {})
         return scraper_config if isinstance(scraper_config, dict) else {}
+
+    async def _fetch_joined_groups(self, cookie: str) -> list[str]:
+        """Auto-discover groups the user has joined."""
+        path = "/v2/groups"
+        params = {"count": "50"}
+        signature, timestamp = self._generate_signature(path, params=params)
+        url = f"https://api.zsxq.com{path}?{urlencode(params)}"
+        response = await self.http_client.get(
+            url,
+            headers={
+                "Origin": "https://wx.zsxq.com",
+                "Referer": "https://wx.zsxq.com/",
+                "Cookie": cookie,
+                "X-Signature": signature,
+                "X-Timestamp": timestamp,
+            },
+        )
+        if response.status_code != 200:
+            return []
+        payload = response.json()
+        if not isinstance(payload, dict) or not payload.get("succeeded"):
+            return []
+        groups = payload.get("resp_data", {}).get("groups", [])
+        ids = [str(g.get("group_id", "")) for g in groups if isinstance(g, dict)]
+        logger.info("Zsxq: auto-discovered %d groups: %s", len(ids), ids)
+        return ids
 
     def _generate_signature(
         self,
